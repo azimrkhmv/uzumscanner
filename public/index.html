@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Uzum Shop Analyzer</title>
+  <style>
+    :root { --uzum: #7000ff; --bg: #f4f4f8; --ok: #1a9d54; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg); color: #1f2026; min-height: 100vh;
+      display: flex; align-items: flex-start; justify-content: center; padding: 48px 16px;
+    }
+    .card {
+      background: #fff; border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,.08);
+      width: 100%; max-width: 560px; padding: 32px;
+    }
+    h1 { margin: 0 0 4px; font-size: 22px; }
+    p.sub { margin: 0 0 24px; color: #6b6b76; font-size: 14px; }
+    .row { display: flex; gap: 8px; }
+    input {
+      flex: 1; padding: 12px 14px; font-size: 15px; border: 1px solid #d8d8e0;
+      border-radius: 10px; outline: none;
+    }
+    input:focus { border-color: var(--uzum); }
+    button {
+      padding: 12px 20px; font-size: 15px; font-weight: 600; color: #fff;
+      background: var(--uzum); border: 0; border-radius: 10px; cursor: pointer;
+    }
+    button:disabled { opacity: .6; cursor: default; }
+    .result { margin-top: 24px; display: none; }
+    .result.show { display: block; }
+    .shop-name { font-size: 18px; font-weight: 700; margin-bottom: 2px; }
+    .shop-name a { color: var(--uzum); text-decoration: none; }
+    .meta { color: #6b6b76; font-size: 13px; margin-bottom: 18px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .stat { background: var(--bg); border-radius: 12px; padding: 14px 16px; }
+    .stat .label { font-size: 12px; color: #6b6b76; }
+    .stat .value { font-size: 22px; font-weight: 700; margin-top: 2px; }
+    .quote { grid-column: 1 / -1; background: #f0e9ff; border: 1px solid #d9c7ff; }
+    .quote .value { color: var(--uzum); }
+    .error { margin-top: 20px; color: #c0392b; font-size: 14px; display: none; }
+    .error.show { display: block; }
+    .spinner { display: inline-block; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Uzum Shop Analyzer</h1>
+    <p class="sub">Paste a shop URL (e.g. <code>uzum.uz/uz/seller/dafna</code>) or its slug to get an instant product count & image-creation quote.</p>
+
+    <div id="overview" style="display:flex;gap:12px;margin-bottom:20px">
+      <div style="flex:1;background:#f4f4f8;border-radius:12px;padding:14px 16px">
+        <div style="font-size:12px;color:#6b6b76">Tracked shops</div>
+        <div style="font-size:24px;font-weight:700" id="ovShops">—</div>
+      </div>
+      <div style="flex:1;background:#f0e9ff;border:1px solid #d9c7ff;border-radius:12px;padding:14px 16px">
+        <div style="font-size:12px;color:#6b6b76">Total products (all shops)</div>
+        <div style="font-size:24px;font-weight:700;color:#7000ff" id="ovProducts">—</div>
+      </div>
+    </div>
+
+    <form id="form" class="row">
+      <input id="input" placeholder="https://uzum.uz/uz/seller/…  or  dafna" autocomplete="off" />
+      <button id="btn" type="submit">Analyze</button>
+    </form>
+
+    <div id="error" class="error"></div>
+
+    <div id="result" class="result">
+      <div class="shop-name"><a id="shopUrl" href="#" target="_blank" rel="noopener"><span id="shopTitle"></span></a></div>
+      <div class="meta" id="shopMeta"></div>
+      <div class="grid">
+        <div class="stat"><div class="label">Products</div><div class="value" id="count"></div></div>
+        <div class="stat"><div class="label">Approx. pages on site</div><div class="value" id="pages"></div></div>
+        <div class="stat"><div class="label">Images you can create</div><div class="value" id="images"></div></div>
+        <div class="stat"><div class="label">Seller rating</div><div class="value" id="rating"></div></div>
+        <div class="stat quote"><div class="label">Instant quote</div><div class="value" id="quote"></div></div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;text-align:right">
+      <a href="/crm.html" style="color:#7000ff;text-decoration:none;font-size:13px;font-weight:600">Top shops & products →</a>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const fmt = (n) => (n == null ? '—' : Number(n).toLocaleString('en-US'));
+
+    // Overview totals across all tracked shops.
+    (async () => {
+      try {
+        const { shops } = await (await fetch('/api/shops')).json();
+        $('ovShops').textContent = fmt(shops.length);
+        $('ovProducts').textContent = fmt(shops.reduce((a, s) => a + (s.last_count || 0), 0));
+      } catch {}
+    })();
+
+    $('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = $('input').value.trim();
+      if (!input) return;
+
+      $('btn').disabled = true;
+      $('btn').textContent = 'Analyzing…';
+      $('error').classList.remove('show');
+      $('result').classList.remove('show');
+
+      try {
+        const r = await fetch('/api/analyze?input=' + encodeURIComponent(input));
+        const data = await r.json();
+        if (!data.ok) throw new Error(data.error || 'Analysis failed');
+
+        $('shopTitle').textContent = data.title;
+        $('shopUrl').href = data.url;
+        $('shopMeta').textContent =
+          `Shop ID ${data.id}` + (data.orders != null ? ` · ${fmt(data.orders)} orders` : '');
+        $('count').textContent = fmt(data.productCount);
+        $('pages').textContent = fmt(data.approxPages);
+        $('images').textContent = fmt(data.imagesYouCanCreate);
+        $('rating').textContent = data.rating != null ? data.rating + ' ★' : '—';
+        $('quote').textContent = fmt(data.quote) + " so'm";
+        $('result').classList.add('show');
+      } catch (err) {
+        $('error').textContent = err.message;
+        $('error').classList.add('show');
+      } finally {
+        $('btn').disabled = false;
+        $('btn').textContent = 'Analyze';
+      }
+    });
+  </script>
+</body>
+</html>

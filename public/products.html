@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Uzum — All Products</title>
+  <style>
+    :root { --uzum: #7000ff; --bg: #f4f4f8; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg); color: #1f2026; padding: 32px; }
+    .head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    h1 { margin: 0; font-size: 22px; }
+    .links a { text-decoration: none; color: var(--uzum); font-weight: 600; font-size: 14px; margin-left: 16px; }
+    .controls { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    input, select { padding: 10px 12px; font-size: 14px; border: 1px solid #d8d8e0; border-radius: 10px; outline: none; }
+    input:focus, select:focus { border-color: var(--uzum); }
+    input#q { flex: 1; min-width: 220px; }
+    table { width: 100%; border-collapse: collapse; background: #fff;
+      border-radius: 12px; overflow: hidden; box-shadow: 0 4px 18px rgba(0,0,0,.06); }
+    th, td { text-align: left; padding: 11px 14px; font-size: 14px; border-bottom: 1px solid #eee; }
+    th { background: #faf8ff; color: #555; font-size: 12px; text-transform: uppercase; letter-spacing: .3px; }
+    tr:last-child td { border-bottom: 0; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    td.title a { color: #1f2026; text-decoration: none; }
+    td.title a:hover { color: var(--uzum); }
+    td.shop a { color: var(--uzum); text-decoration: none; font-size: 13px; }
+    .empty { padding: 40px; text-align: center; color: #888; }
+    .pager { display: flex; align-items: center; gap: 12px; margin-top: 16px; justify-content: center; }
+    .pager button { padding: 8px 16px; border: 1px solid #d8d8e0; background: #fff; border-radius: 8px; cursor: pointer; font-size: 14px; }
+    .pager button:disabled { opacity: .4; cursor: default; }
+    .count { color: #6b6b76; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="head">
+    <h1>All Products</h1>
+    <div class="links">
+      <a href="/">Analyze</a>
+      <a href="/crm.html">Top shops</a>
+    </div>
+  </div>
+
+  <div class="controls">
+    <input id="q" placeholder="Search product title…" autocomplete="off" />
+    <select id="shop"><option value="">All shops</option></select>
+  </div>
+  <div class="count" id="count"></div>
+
+  <table>
+    <thead>
+      <tr><th>Product</th><th>Shop</th><th class="num">Price (so'm)</th></tr>
+    </thead>
+    <tbody id="rows"><tr><td colspan="3" class="empty">Loading…</td></tr></tbody>
+  </table>
+
+  <div class="pager">
+    <button id="prev">← Prev</button>
+    <span class="count" id="pageinfo"></span>
+    <button id="next">Next →</button>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const fmt = (n) => (n == null ? '—' : Number(n).toLocaleString('en-US'));
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const LIMIT = 50;
+    let offset = 0, total = 0, q = '', shop = new URLSearchParams(location.search).get('shop') || '';
+
+    async function loadShops() {
+      const data = await (await fetch('/api/shops')).json();
+      for (const s of data.shops || []) {
+        const o = document.createElement('option');
+        o.value = s.shop_id; o.textContent = `${s.title} (${fmt(s.last_count)})`;
+        if (String(s.shop_id) === String(shop)) o.selected = true;
+        $('shop').appendChild(o);
+      }
+    }
+
+    async function load() {
+      const params = new URLSearchParams({ limit: LIMIT, offset });
+      if (q) params.set('q', q);
+      if (shop) params.set('shop', shop);
+      const data = await (await fetch('/api/products?' + params)).json();
+      total = data.total;
+
+      const tbody = $('rows');
+      if (!data.products.length) {
+        tbody.innerHTML = `<tr><td colspan="3" class="empty">${total === 0 ? 'No products stored — run <code>npm run products</code>.' : 'No matches.'}</td></tr>`;
+      } else {
+        tbody.innerHTML = '';
+        for (const p of data.products) {
+          const tr = document.createElement('tr');
+          const purl = 'https://uzum.uz/uz/product/' + encodeURIComponent(p.product_id);
+          const surl = 'https://uzum.uz/uz/seller/' + encodeURIComponent(p.shop_slug || '');
+          tr.innerHTML = `
+            <td class="title"><a href="${esc(purl)}" target="_blank" rel="noopener">${esc(p.title || '(untitled)')}</a></td>
+            <td class="shop"><a href="${esc(surl)}" target="_blank" rel="noopener">${esc(p.shop_title)}</a></td>
+            <td class="num">${fmt(p.price)}</td>`;
+          tbody.appendChild(tr);
+        }
+      }
+      $('count').textContent = `${fmt(total)} products` + (shop ? ' in this shop' : ' across all shops');
+      const from = total ? offset + 1 : 0;
+      const to = Math.min(offset + LIMIT, total);
+      $('pageinfo').textContent = `${from}–${to} of ${fmt(total)}`;
+      $('prev').disabled = offset === 0;
+      $('next').disabled = offset + LIMIT >= total;
+    }
+
+    let t;
+    $('q').oninput = () => { clearTimeout(t); t = setTimeout(() => { q = $('q').value.trim(); offset = 0; load(); }, 300); };
+    $('shop').onchange = () => { shop = $('shop').value; offset = 0; load(); };
+    $('prev').onclick = () => { offset = Math.max(0, offset - LIMIT); load(); };
+    $('next').onclick = () => { offset += LIMIT; load(); };
+
+    loadShops().then(load);
+  </script>
+</body>
+</html>
