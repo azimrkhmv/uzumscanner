@@ -6,7 +6,8 @@
   "scripts": {
     "scan": "node uzum-scanner.js",
     "products": "node fetch-products.js",
-    "serve": "node server.js"
+    "serve": "node server.js",
+    "build:static": "node build-static.js"
   },
   "keywords": [],
   "author": "",

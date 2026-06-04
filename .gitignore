@@ -17,3 +17,8 @@ Thumbs.db
 
 # scratch screenshots
 shot-*.png
+sshot-*.png
+
+# generated static snapshot + vercel link
+web-static/
+.vercel/
