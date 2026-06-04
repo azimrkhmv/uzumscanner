@@ -136,6 +136,17 @@ const STYLE = `
   .pager button { padding:8px 16px; border:1px solid #d8d8e0; background:#fff; border-radius:8px; cursor:pointer; }
   .pager button:disabled { opacity:.4; cursor:default; } .count { color:#6b6b76; font-size:13px; }
   .note { color:#6b6b76; font-size:13px; margin-top:8px; }
+  .tablewrap { overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:12px; }
+  .tablewrap table { min-width:640px; }
+  select { max-width:100%; }
+  @media (max-width:600px) {
+    body { padding:16px; }
+    h1 { font-size:19px; }
+    th,td { padding:10px 10px; font-size:13px; }
+    .tcard { padding:12px 16px; } .tcard .value { font-size:22px; }
+    .links a { margin-left:10px; font-size:13px; }
+    .controls { flex-direction:column; } input#q, select { width:100%; }
+  }
 `;
 const ESC = `const esc=(s)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=(n)=>n==null?'—':Number(n).toLocaleString('en-US');`;
@@ -171,8 +182,8 @@ fs.writeFileSync(path.join(OUT, 'index.html'), `<!DOCTYPE html><html lang="en"><
   <div class="tcard"><div class="label">Shops</div><div class="value">${shops.length}</div></div>
   <div class="tcard hl"><div class="label">Total products (all shops)</div><div class="value">${totalProducts.toLocaleString('en-US')}</div></div>
 </div>
-<table><thead><tr><th class="rank">#</th><th>Shop</th><th class="num">Products</th><th class="num">Rating</th><th class="num">Orders</th><th class="num">Quote (so'm)</th><th>Catalog</th></tr></thead>
-<tbody id="rows"><tr><td colspan="7">Loading…</td></tr></tbody></table>
+<div class="tablewrap"><table><thead><tr><th class="rank">#</th><th>Shop</th><th class="num">Products</th><th class="num">Rating</th><th class="num">Orders</th><th class="num">Quote (so'm)</th><th>Catalog</th></tr></thead>
+<tbody id="rows"><tr><td colspan="7">Loading…</td></tr></tbody></table></div>
 <p class="note">Static snapshot · generated ${config.generatedAt}. Live analyze & scanning run from the local app.</p>
 <script>${ESC}
 const A=(id)=>document.getElementById(id);
@@ -209,8 +220,8 @@ fs.writeFileSync(path.join(OUT, 'products.html'), `<!DOCTYPE html><html lang="en
 <div class="controls"><input id="q" placeholder="Search product title…" autocomplete="off"/>
 <select id="shop"><option value="">All shops</option></select></div>
 <div class="count" id="count"></div>
-<table><thead><tr><th>Product</th><th>Shop</th><th class="num">Price (so'm)</th></tr></thead>
-<tbody id="rows"><tr><td colspan="3">Loading…</td></tr></tbody></table>
+<div class="tablewrap"><table><thead><tr><th>Product</th><th>Shop</th><th class="num">Price (so'm)</th></tr></thead>
+<tbody id="rows"><tr><td colspan="3">Loading…</td></tr></tbody></table></div>
 <div class="pager"><button id="prev">← Prev</button><span class="count" id="pageinfo"></span><button id="next">Next →</button></div>
 <script>${ESC}
 const LIMIT=50; let ALL=[],view=[],offset=0,q='',shop=new URLSearchParams(location.search).get('shop')||'';

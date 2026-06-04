@@ -30,6 +30,15 @@
     .pager button { padding: 8px 16px; border: 1px solid #d8d8e0; background: #fff; border-radius: 8px; cursor: pointer; font-size: 14px; }
     .pager button:disabled { opacity: .4; cursor: default; }
     .count { color: #6b6b76; font-size: 13px; }
+    .tablewrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; }
+    .tablewrap table { min-width: 520px; }
+    @media (max-width: 600px) {
+      body { padding: 16px; }
+      h1 { font-size: 19px; }
+      th, td { padding: 10px; font-size: 13px; }
+      .links a { margin-left: 10px; font-size: 13px; }
+      .controls { flex-direction: column; } input#q, select { width: 100%; }
+    }
   </style>
 </head>
 <body>
@@ -47,12 +56,12 @@
   </div>
   <div class="count" id="count"></div>
 
-  <table>
+  <div class="tablewrap"><table>
     <thead>
       <tr><th>Product</th><th>Shop</th><th class="num">Price (so'm)</th></tr>
     </thead>
     <tbody id="rows"><tr><td colspan="3" class="empty">Loading…</td></tr></tbody>
-  </table>
+  </table></div>
 
   <div class="pager">
     <button id="prev">← Prev</button>

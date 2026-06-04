@@ -43,6 +43,14 @@
     .error { margin-top: 20px; color: #c0392b; font-size: 14px; display: none; }
     .error.show { display: block; }
     .spinner { display: inline-block; }
+    @media (max-width: 600px) {
+      body { padding: 16px; }
+      .card { padding: 22px; }
+      .row { flex-direction: column; }
+      .row button { width: 100%; }
+      #overview { flex-direction: column; }
+      .grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>

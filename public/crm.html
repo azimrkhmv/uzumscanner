@@ -30,6 +30,15 @@
     .pill { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: #eee; color: #666; margin-left: 6px; }
     tr.row:hover { background: #faf9ff; }
     td.prod a { color: var(--uzum); text-decoration: none; font-size: 13px; }
+    .tablewrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; }
+    .tablewrap table { min-width: 640px; }
+    @media (max-width: 600px) {
+      body { padding: 16px; }
+      h1 { font-size: 19px; }
+      th, td { padding: 10px; font-size: 13px; }
+      .tcard { padding: 12px 16px; } .tcard .value { font-size: 22px; }
+      .links a { margin-left: 10px; font-size: 13px; }
+    }
   </style>
 </head>
 <body>
@@ -44,7 +53,7 @@
     <div class="tcard"><div class="label">Shops</div><div class="value" id="tShops">—</div></div>
     <div class="tcard hl"><div class="label">Total products (all shops)</div><div class="value" id="tProducts">—</div></div>
   </div>
-  <table>
+  <div class="tablewrap"><table>
     <thead>
       <tr>
         <th class="rank">#</th><th>Shop</th><th class="num">Products</th>
@@ -52,7 +61,7 @@
       </tr>
     </thead>
     <tbody id="rows"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
-  </table>
+  </table></div>
 
   <script>
     const fmt = (n) => (n == null ? '—' : Number(n).toLocaleString('en-US'));
